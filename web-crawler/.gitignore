@@ -1,0 +1,18 @@
+# local secrets
+.env
+
+# runtime artefacts (staged jobs, raw html, dead-letter, manifests)
+data/
+
+# browser identity profiles (cookies / logins)
+.profiles/
+
+# python
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Crawl4AI / browser caches
+*.log

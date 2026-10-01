@@ -1,0 +1,48 @@
+# ---------------------------------------------------------------------------
+# Global crawl settings for the jobfather crawler.
+# Per-source settings (selectors, caps, CDP) live in config/sources.yaml
+# ---------------------------------------------------------------------------
+
+run:
+  # Hard ceiling across ALL sources in a single run.
+  max_jobs_total: 250
+  # Fallback concurrency when a source does not declare its own.
+  default_max_concurrency: 8
+  # Ignore Crawl4AI cache and re-fetch every URL.
+  force_refresh: false
+  # When to persist raw HTML next to the staged job: never | failures | always
+  save_html: failures
+
+browser:
+  page_timeout_ms: 45000
+  # Crawl4AI `wait_until` value: domcontentloaded | load | networkidle
+  wait_until: domcontentloaded
+  # Chrome DevTools Protocol endpoint for the human-logged-in browser.
+  # null -> resolved from the CRAWLER_CDP_URL env var.
+  cdp_url: null
+  # Persistent identity profile used when a source does NOT need CDP.
+  user_data_dir: .profiles/jobfather
+  viewport_width: 1366
+  viewport_height: 900
+  locale: en-MY
+  timezone_id: Asia/Kuala_Lumpur
+
+dispatcher:
+  memory_threshold_percent: 75.0
+  rate_limiter:
+    base_delay: [1.0, 3.0]
+    max_delay: 60.0
+    max_retries: 3
+    rate_limit_codes: [429, 503]
+
+retry:
+  max_attempts: 3
+  base_delay_seconds: 1.5
+  backoff_factor: 2.0
+  max_delay_seconds: 30.0
+
+markdown:
+  # Crawl4AI content filter used to prune boilerplate from the JD.
+  content_filter: pruning          # pruning | none
+  pruning_threshold: 0.48
+  excluded_tags: [nav, aside, footer, script, style, header, noscript, form]

@@ -1,0 +1,22 @@
+# ---------------------------------------------------------------------------
+# Default per-run filters.  A `run_request.json` (from the CLI/frontend) can
+# override any of these; these are the fallbacks used when a field is omitted.
+# Because crawling is URL-driven, filters never *discover* jobs - they are
+# recorded on every row and used for optional post-filtering / reporting.
+# ---------------------------------------------------------------------------
+
+state: Kuala Lumpur
+
+work_arrangement: hybrid      # remote | hybrid | onsite
+
+expected_salary:
+  min: 6000
+  max: 9000
+  currency: MYR
+  period: monthly             # monthly | annual | daily
+
+# Optional post-filters.  Empty lists = keep everything.
+post_filter:
+  require_location_match: false       # drop rows whose location != state
+  exclude_title_terms: []             # e.g. ["intern", "junior"]
+  require_title_terms: []

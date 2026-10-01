@@ -1,0 +1,95 @@
+# ---------------------------------------------------------------------------
+# Per-source crawl configuration.
+#
+# IMPORTANT: the CSS `schema` blocks below are *starting points*.  Job boards
+# change their DOM frequently.  Calibrate them against real markup with:
+#
+#     python -m jobfather_crawler inspect <job-url>
+#
+# which saves the raw HTML to data/inspect/ so selectors can be written against
+# actual markup instead of guesses.  Extraction order per page is:
+#   1. schema.org JobPosting JSON-LD  (very stable - preferred, `prefer_json_ld`)
+#   2. the CSS `schema` below
+# ---------------------------------------------------------------------------
+
+sources:
+  jobstreet:
+    label: JobStreet (SEEK)
+    url_patterns: ["my.jobstreet.com", "www.jobstreet.com.my", "jobstreet.com.my"]
+    needs_cdp: true          # SEEK blocks headless -> attach to human Chrome
+    max_jobs: 100
+    max_concurrency: 4
+    prefer_json_ld: true
+    wait_for: "h1"
+    schema:
+      name: JobStreetJob
+      baseSelector: "body"
+      fields:
+        - { name: title, selector: "h1", type: text }
+        - { name: company, selector: "[data-automation='advertiser-name'], a[href*='/companies/']", type: text }
+        - { name: location, selector: "[data-automation='job-detail-location'], [data-automation='location']", type: text }
+        - { name: salary, selector: "[data-automation='job-detail-salary'], [data-automation='salary']", type: text }
+        - { name: employment_type, selector: "[data-automation='job-detail-work-type']", type: text }
+        - { name: posted_date, selector: "[data-automation='job-detail-date']", type: text }
+        - { name: description_html, selector: "[data-automation='jobAdDetails'], [data-automation='job-detail-description']", type: html }
+
+  hiredly:
+    label: Hiredly
+    url_patterns: ["my.hiredly.com", "hiredly.com", "www.hiredly.com"]
+    needs_cdp: false         # server-rendered -> friendliest source
+    max_jobs: 50
+    max_concurrency: 8
+    prefer_json_ld: true
+    wait_for: "h1"
+    schema:
+      name: HiredlyJob
+      baseSelector: "body"
+      fields:
+        - { name: title, selector: "h1", type: text }
+        - { name: company, selector: "a[href*='/company/'], .company-name", type: text }
+        - { name: location, selector: "[class*='location'], [class*='Location']", type: text }
+        - { name: salary, selector: "[class*='salary'], [class*='Salary']", type: text }
+        - { name: employment_type, selector: "[class*='employment'], [class*='Employment']", type: text }
+        - { name: posted_date, selector: "time", type: text, attribute: datetime }
+        - { name: description_html, selector: "[class*='job-description'], article, main", type: html }
+
+  indeed:
+    label: Indeed (best-effort)
+    url_patterns: ["malaysia.indeed.com", "my.indeed.com", "indeed.com"]
+    needs_cdp: false
+    max_jobs: 50
+    max_concurrency: 3
+    prefer_json_ld: true
+    wait_for: "#jobDescriptionText"
+    schema:
+      name: IndeedJob
+      baseSelector: "body"
+      fields:
+        - { name: title, selector: "h1.jobsearch-JobInfoHeader-title, h1", type: text }
+        - { name: company, selector: "[data-testid='inlineHeader-companyName'], .jobsearch-CompanyInfoContainer a", type: text }
+        - { name: location, selector: "[data-testid='inlineHeader-companyLocation'], .jobsearch-JobInfoHeader-subtitle", type: text }
+        - { name: salary, selector: "#salaryInfoAndJobType .attribute_snippet, [class*='salary']", type: text }
+        - { name: employment_type, selector: "#salaryInfoAndJobType .attribute_snippet", type: text }
+        - { name: posted_date, selector: "[class*='date']", type: text }
+        - { name: description_html, selector: "#jobDescriptionText", type: html }
+
+  linkedin:
+    label: LinkedIn
+    url_patterns: ["linkedin.com", "www.linkedin.com"]
+    needs_cdp: true          # strongest anti-bot -> attach to human Chrome
+    max_jobs: 50
+    max_concurrency: 2       # deliberately low to reduce account risk
+    dispatcher: semaphore
+    prefer_json_ld: true
+    wait_for: ".description__text, .jobs-description"
+    schema:
+      name: LinkedInJob
+      baseSelector: "body"
+      fields:
+        - { name: title, selector: "h1.t-24, .job-details-jobs-unified-top-card__job-title h1", type: text }
+        - { name: company, selector: ".job-details-jobs-unified-top-card__company-name a, .topcard__org-name-link", type: text }
+        - { name: location, selector: ".job-details-jobs-unified-top-card__primary-description-container, .topcard__flavor--bullet", type: text }
+        - { name: salary, selector: ".jobs-unified-top-card__job-insight--highlight span", type: text }
+        - { name: employment_type, selector: ".job-details-jobs-unified-top-card__job-insight span", type: text }
+        - { name: posted_date, selector: ".job-details-jobs-unified-top-card__posted-date, time", type: text }
+        - { name: description_html, selector: ".description__text, .jobs-description__content, .jobs-box__html-content", type: html }
