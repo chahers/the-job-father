@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     postgres_user: str = "jobfather"
     postgres_password: str = "the-great-job-father"
     postgres_superuser: str = "postgres"
+    # Optional override; blank -> auto-discover ../database from the project.
+    database_dir: str = ""
 
     crawler_cdp_url: str = "http://localhost:9222"
     crawler_chrome_user_data_dir: str = ".profiles/jobfather"
@@ -112,8 +114,15 @@ class MarkdownCfg(BaseModel):
     )
 
 
+class DatabaseCfg(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    # Directory holding the numbered *.sql migrations (shared by all agents).
+    dir: str | None = None
+
+
 class SettingsDoc(BaseModel):
     model_config = ConfigDict(extra="ignore")
+    database: DatabaseCfg = Field(default_factory=DatabaseCfg)
     run: RunCfg = Field(default_factory=RunCfg)
     browser: BrowserCfg = Field(default_factory=BrowserCfg)
     dispatcher: DispatcherCfg = Field(default_factory=DispatcherCfg)
@@ -143,6 +152,27 @@ def project_root(start: Path | None = None) -> Path:
     return Path.cwd()
 
 
+def find_database_dir(start: Path | None = None, override: str | Path | None = None) -> Path:
+    """Locate the shared ``database/`` directory that holds the migrations.
+
+    Resolution order:
+      1. explicit *override* (from env ``DATABASE_DIR`` or settings.yaml)
+      2. walk up from *start* looking for a ``database/migrations`` directory
+         (i.e. the repo-root ``database/`` shared by every agent)
+      3. legacy fallback: ``<project_root>/db``
+    """
+    if override:
+        path = Path(override)
+        return path if path.is_absolute() else project_root(start) / path
+
+    here = Path(start) if start else Path(__file__).resolve()
+    for candidate in (here, *here.parents):
+        candidate_db = candidate / "database"
+        if (candidate_db / "migrations").is_dir():
+            return candidate_db
+    return project_root(here) / "db"
+
+
 def read_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"config file not found: {path}")
@@ -161,12 +191,13 @@ class Runtime:
     filters: FiltersDoc
     sources_raw: dict[str, dict[str, Any]]
     root: Path
+    database_override: str | Path | None = None
     config_dir: Path = field(init=False)
-    db_dir: Path = field(init=False)
+    database_dir: Path = field(init=False)
 
     def __post_init__(self) -> None:
         self.config_dir = self.root / "config"
-        self.db_dir = self.root / "db"
+        self.database_dir = find_database_dir(self.root, self.database_override)
 
     @property
     def staging_dir(self) -> Path:
@@ -183,8 +214,13 @@ class Runtime:
         return configured if configured.is_absolute() else self.root / configured
 
     @property
-    def schema_sql(self) -> Path:
-        return self.db_dir / "001_init.sql"
+    def migrations_dir(self) -> Path:
+        return self.database_dir / "migrations"
+
+    @property
+    def migration_files(self) -> list[Path]:
+        """Numbered migration files in apply order (``NNN_*.sql``)."""
+        return sorted(self.migrations_dir.glob("*.sql"))
 
 
 @lru_cache(maxsize=1)
@@ -201,4 +237,12 @@ def load_runtime(root: Path | None = None, *, env_file: Path | None = None) -> R
     sources_raw = read_yaml(config_dir / "sources.yaml").get("sources", {}) or {}
     if not sources_raw:
         raise ValueError("config/sources.yaml defines no sources")
-    return Runtime(env=env, doc=doc, filters=filters, sources_raw=sources_raw, root=root)
+    override = env.database_dir or doc.database.dir
+    return Runtime(
+        env=env,
+        doc=doc,
+        filters=filters,
+        sources_raw=sources_raw,
+        root=root,
+        database_override=override or None,
+    )

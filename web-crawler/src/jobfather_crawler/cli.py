@@ -166,12 +166,17 @@ def inspect(
 
 @app.command("db-init")
 def db_init() -> None:
-    """Apply db/001_init.sql to the jobfather database."""
+    """Apply the numbered migrations from the shared database/ directory."""
     runtime = _runtime()
-    from jobfather_crawler.loader import apply_schema
+    from jobfather_crawler.loader import apply_migrations
 
-    apply_schema(runtime.env.libpq_dsn, runtime.schema_sql)
-    console.print("[green]schema applied[/green]")
+    console.print(f"migrations : [cyan]{runtime.migrations_dir}[/cyan]")
+    applied = apply_migrations(runtime.env.libpq_dsn, runtime.migrations_dir)
+    if applied:
+        for version in applied:
+            console.print(f"[green]applied[/green] {version}")
+    else:
+        console.print("[green]already up to date[/green]")
 
 
 @app.command("load")

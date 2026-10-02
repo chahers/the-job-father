@@ -14,7 +14,7 @@
     to disk.  Only the app-role password lands in .env.
 
 .EXAMPLE
-    .\scripts\pg_setup.ps1 -SuperuserPassword (Read-Host -AsSecureString 'postgres superuser password')
+    .\database\scripts\pg_setup.ps1 -SuperuserPassword (Read-Host -AsSecureString 'postgres superuser password')
 #>
 [CmdletBinding()]
 param(
@@ -113,7 +113,8 @@ try {
     Write-Host ""
     Write-Host "  DATABASE_URL=postgresql+psycopg://$AppRole`:$AppPassword@$DbHost`:$Port/$Database"
     Write-Host ""
-    Write-Host "  Next:  python -m jobfather_crawler db-init"
+    Write-Host "  Next:  cd web-crawler"
+    Write-Host "         .venv\Scripts\python.exe -m jobfather_crawler db-init"
     Write-Host "=========================================================="
 }
 finally {

@@ -46,3 +46,9 @@ markdown:
   content_filter: pruning          # pruning | none
   pruning_threshold: 0.48
   excluded_tags: [nav, aside, footer, script, style, header, noscript, form]
+
+database:
+  # Directory of numbered *.sql migrations, SHARED by every agent in the repo.
+  # null -> auto-discovered by walking up from this project for database/migrations
+  #         (i.e. ../database), falling back to a local ./db.
+  dir: null

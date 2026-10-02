@@ -7,11 +7,11 @@
     the cluster to perform crash recovery, as seen in server.log.
 
 .EXAMPLE
-    .\scripts\pg.ps1 status
-    .\scripts\pg.ps1 start
-    .\scripts\pg.ps1 stop
-    .\scripts\pg.ps1 log
-    .\scripts\pg.ps1 shell jobfather
+    .\database\scripts\pg.ps1 status
+    .\database\scripts\pg.ps1 start
+    .\database\scripts\pg.ps1 stop
+    .\database\scripts\pg.ps1 log
+    .\database\scripts\pg.ps1 shell jobfather
 #>
 [CmdletBinding()]
 param(

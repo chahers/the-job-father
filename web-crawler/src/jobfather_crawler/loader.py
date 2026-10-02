@@ -82,15 +82,56 @@ class LoadStats:
     errors: list[str] = field(default_factory=list)
 
 
-def apply_schema(dsn: str, sql_path: str | Path) -> None:
-    """Run db/001_init.sql (needs CREATE EXTENSION privileges once)."""
+MIGRATIONS_DDL = """
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version    TEXT PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+)
+"""
+
+
+def _migration_version(path: Path) -> str:
+    return path.stem  # e.g. "002_crawl"
+
+
+def apply_migrations(dsn: str, migrations_dir: str | Path) -> list[str]:
+    """Apply every not-yet-recorded ``NNN_*.sql`` in *migrations_dir*.
+
+    Returns the versions applied (an empty list means "already up to date").
+    ``schema_migrations`` is created here so the runner bootstraps itself.
+
+    Each file is executed in one call: psycopg3 falls back to the simple query
+    protocol for parameterless queries, which permits multiple statements.
+    """
     import psycopg
 
-    statements = Path(sql_path).read_text(encoding="utf-8")
+    migrations_dir = Path(migrations_dir)
+    files = sorted(migrations_dir.glob("*.sql"))
+    if not files:
+        raise FileNotFoundError(f"no *.sql migrations found in {migrations_dir}")
+
+    applied: list[str] = []
     with psycopg.connect(dsn, autocommit=True) as conn:
         with conn.cursor() as cur:
-            cur.execute(statements)
-    log.info("schema applied from %s", sql_path)
+            cur.execute(MIGRATIONS_DDL)
+            cur.execute("SELECT version FROM schema_migrations")
+            done = {row[0] for row in cur.fetchall()}
+
+            for path in files:
+                version = _migration_version(path)
+                if version in done:
+                    log.info("migration %s already applied - skipping", version)
+                    continue
+                cur.execute(path.read_text(encoding="utf-8"))
+                cur.execute(
+                    "INSERT INTO schema_migrations (version) VALUES (%s) "
+                    "ON CONFLICT (version) DO NOTHING",
+                    (version,),
+                )
+                applied.append(version)
+                log.info("applied migration %s", version)
+
+    return applied
 
 
 def _embedding_literal(vector: list[float] | None) -> str | None:

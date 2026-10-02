@@ -1,12 +1,12 @@
 -- ---------------------------------------------------------------------------
--- jobfather-crawler schema.  Applied by:  python -m jobfather_crawler db-init
--- Target: existing local PostgreSQL 16.10 cluster (pgvector 0.8.6 already
--- present in %LOCALAPPDATA%\pgsql16\pgsql).  Safe to re-run (idempotent).
--- Run as the `postgres` superuser once for CREATE EXTENSION, then as the
--- `jobfather` app role for everything else.
+-- 002_crawl.sql - tables owned by the crawler agent (web-crawler/).
+--
+--   Applied by:  python -m jobfather_crawler db-init   (from web-crawler/)
+--   Owner:       web-crawler  (the resume agent must NOT modify these)
+--
+-- Safe to re-run: every statement is IF NOT EXISTS.  Migrations are tracked in
+-- schema_migrations, which db-init creates automatically.
 -- ---------------------------------------------------------------------------
-
-CREATE EXTENSION IF NOT EXISTS vector;
 
 -- ------------------------------------------------------------------ jobs ----
 CREATE TABLE IF NOT EXISTS jobs (

@@ -18,13 +18,27 @@ Design rules this module follows:
 
 ---
 
+## Status
+
+| Milestone | State |
+|---|---|
+| M0 scaffold, config, scripts | Done |
+| M1 Hiredly end-to-end | Done (validated against a loopback server, not a live board) |
+| Shared `database/` restructure | Done - schema is now repo-root shared, migration runner in place |
+| Role + database bootstrap | **Pending - needs your `postgres` superuser password (one time)** |
+| Loader against live Postgres | **Pending - `load` has never run against a real cluster** |
+| M2 JobStreet (CDP) | Not started |
+| M3 LinkedIn | Not started |
+| M4 Indeed | Not started |
+| Resume vectors / LangGraph / frontend | Not started |
+
+---
+
 ## Layout
 
 ```
 web-crawler/
 ├── config/          settings.yaml | sources.yaml | filters.yaml
-├── db/001_init.sql  jobs + crawl_runs + crawl_failures (pgvector)
-├── scripts/         pg_setup.ps1 (one-time bootstrap) | pg.ps1 (lifecycle)
 ├── src/jobfather_crawler/
 │   ├── cli.py       crawl | inspect | load | db-init | validate
 │   ├── crawler.py   Crawl4AI wiring: browser/run config, dispatchers, retries
@@ -36,6 +50,12 @@ web-crawler/
 │   └── sources/     base + jobstreet | hiredly | indeed | linkedin adapters
 └── tests/           pure-stdlib/pydantic tests (no browser, no DB)
 ```
+
+> The **database is not inside this folder**. The schema, migrations and cluster
+> scripts are shared by every agent in the repository and live in the top-level
+> [`../database`](../database) directory. This module owns the `jobs`,
+> `crawl_runs` and `crawl_failures` tables (defined in
+> `../database/migrations/002_crawl.sql`).
 
 ---
 
@@ -66,20 +86,27 @@ crawl4ai-doctor     # optional sanity check
 
 ### 2. Database (one time)
 
+Run the bootstrap from the **repository root** (it bootstraps the shared
+database, not the crawler):
+
 ```powershell
 # creates role `jobfather`, database `jobfather`, and the `vector` extension.
 # Prompts for the postgres superuser password; nothing is written to disk.
-.\scripts\pg_setup.ps1 -SuperuserPassword (Read-Host -AsSecureString 'postgres superuser password')
+.\database\scripts\pg_setup.ps1 -SuperuserPassword (Read-Host -AsSecureString 'postgres superuser password')
 
-# apply the schema (jobs / crawl_runs / crawl_failures)
+# from web-crawler/: apply the numbered migrations
+cd web-crawler
 .\.venv\Scripts\python.exe -m jobfather_crawler db-init
 ```
 
 Lifecycle (always use graceful stop - a previous force-kill triggered crash recovery):
 
 ```powershell
-.\scripts\pg.ps1 status | start | stop | restart | log | shell
+.\database\scripts\pg.ps1 status | start | stop | restart | log | shell
 ```
+
+Never edit an already-applied migration - add a new numbered one. The migration
+rules and the table-ownership map are in [`../database/README.md`](../database/README.md).
 
 ### 3. Secrets
 
@@ -216,30 +243,68 @@ first time the browser opens.
 | `jobs` | one row per posting; `url_hash` unique, `embedding vector(1536)` + HNSW cosine index |
 | `crawl_runs` | per-run audit row (counts, request metadata, timings) |
 | `crawl_failures` | dead-letter mirror |
+| `schema_migrations` | shared - which `NNN_*.sql` files have already been applied |
 
-The sibling resume agent will own its own `resumes` table in the same database.
+The sibling resume agent will own its own `resumes` table in the same database
+(`../database/migrations/003_resumes.sql`, not created yet).
 
 ---
 
-# To do next
+## Done
 
-### 1. Finish the database on this machine (one time)
+Built and verified:
+
+- **Sources**: JobStreet (100/run, CDP-attached Chrome), Hiredly (50), Indeed (50, best-effort), LinkedIn (50, CDP + deliberately low concurrency). Global ceiling **250/run**; per-source caps live in `config/sources.yaml`.
+- **Extraction**: schema.org `JobPosting` JSON-LD first (stdlib, very stable), CSS schema fallback configured per source in YAML. **No LLM extraction**, and the **full JD is stored**, never summarised.
+- **Crawl4AI wiring**: `AsyncWebCrawler` + `arun_many`, `MemoryAdaptiveDispatcher` / `SemaphoreDispatcher`, `RateLimiter` (429/503 backoff), `CrawlerMonitor`, per-source browser configs (CDP attach vs. managed persistent profile).
+- **Pipeline**: URL normalisation and dedup by `url_hash`, change detection by `content_hash`, staging to `data/runs/<run_id>/` (JSON + Markdown + raw HTML + manifest + dead-letter), idempotent `ON CONFLICT (url_hash) DO UPDATE` loader, OpenAI `text-embedding-3-small` embeddings into `vector(1536)` with an HNSW cosine index.
+- **Resilience**: transient-vs-permanent error classification, exponential backoff with jitter, dead-letter to both `dead_letter.jsonl` and the `crawl_failures` table, and rejection of challenge/empty pages so they never pollute the dataset.
+- **Interface**: CLI (`crawl`, `inspect`, `load`, `db-init`, `validate`) plus a JSON `run_request.json` contract that the future frontend will write.
+- **Database**: schema lives in the shared top-level [`../database`](../database) directory. This module owns `jobs`, `crawl_runs` and `crawl_failures`; `db-init` runs numbered migrations tracked in `schema_migrations`, so each file applies exactly once.
+- **Tests**: **50 passing**, including a Crawl4AI API contract test and 8 static checks on the shared migrations.
+
+Verified on this machine:
+
+- 50 tests pass (Python 3.13.15 venv, Crawl4AI **0.9.4**, Playwright browsers installed).
+- A real crawl runs end to end - browser launch, navigation, extraction, staged JSON - producing the correct title, company, location, salary, employment type, posted date, inferred seniority, skills and Markdown body.
+- `find_database_dir()` resolves the shared `database/` at the repo root, and a stale-reference grep for `db_dir` / `schema_sql` / `001_init` / `apply_schema` returns zero hits.
+- `db-init` resolves the new path, finds both migrations, and reaches Postgres. It currently stops at `password authentication failed for user "jobfather"`, which is expected until the bootstrap below has been run.
+- PostgreSQL **16.10** and pgvector **0.8.6** were found **already installed** at `%LOCALAPPDATA%\pgsql16`, so no installer or admin rights are needed.
+
+---
+
+## To do next
+
+### 1. Finish the database, then prove the loader end to end
+
+Two parts: a one-time bootstrap that only you can run (it needs your interactive
+`postgres` superuser password), then the first real load through this code.
 
 ```powershell
+# 1) from the REPOSITORY ROOT: create role `jobfather`, database `jobfather`, extension `vector`
+.\database\scripts\pg_setup.ps1 -SuperuserPassword (Read-Host -AsSecureString 'postgres superuser password')
+
+# 2) from web-crawler/: apply the numbered migrations
 cd web-crawler
-# creates role `jobfather`, database `jobfather` and the pgvector extension.
-# Prompts for the postgres superuser password; nothing is persisted.
-.\scripts\pg_setup.ps1 -SuperuserPassword (Read-Host -AsSecureString 'postgres superuser password')
-.\.venv\Scripts\python.exe -m jobfather_crawler db-init
+.\.venv\Scripts\python.exe -m jobfather_crawler db-init   # expect: applied 001_extensions / 002_crawl
+.\.venv\Scripts\python.exe -m jobfather_crawler db-init   # expect: already up to date
+
+# 3) still unproven: the loader against a real cluster
+.\.venv\Scripts\python.exe -m jobfather_crawler load --no-embed   # expect inserted / updated counts
+.\.venv\Scripts\python.exe -m jobfather_crawler load --no-embed   # expect 0 inserted, N updated
 ```
 
-Then add `OPENAI_API_KEY` to `web-crawler/.env` (only needed for the embedding step).
+Then add `OPENAI_API_KEY` to `.env` and re-run `load` (without `--no-embed`) to
+prove embeddings land in `embedding vector(1536)`.
+
+Known gap to fold in while you are there: a failed `db-init` currently dumps a raw
+traceback instead of a one-line message.
 
 ### 2. First live crawl per source, and selector calibration
 
 - Start with **Hiredly** (server-rendered, friendliest), then **JobStreet** and
-  **LinkedIn** through the CDP-attached Chrome (see the runbook in
-  `web-crawler/README.md`), then **Indeed** (best-effort).
+  **LinkedIn** through the CDP-attached Chrome (see the CDP runbook above), then
+  **Indeed** (best-effort).
 - For each source run `python -m jobfather_crawler inspect "<job-url>"` and update
   the CSS fallback schemas in `config/sources.yaml` against the real markup.
 - The JSON-LD extraction path is already validated; the CSS selectors are still
@@ -260,30 +325,10 @@ Then add `OPENAI_API_KEY` to `web-crawler/.env` (only needed for the embedding s
 
 ---
 
-## Done - `web-crawler/` (data ingestion)
+Re-verify the suite at any time from `web-crawler/`:
 
-A URL-driven, human-in-the-loop crawler. You paste specific job-posting URLs; it
-fetches each one, extracts structured data, converts the job description to clean
-Markdown and **stages everything to disk**. A separate `load` step then upserts
-into Postgres + pgvector.
-
-Built and verified:
-
-- **Sources**: JobStreet (100/run, CDP-attached Chrome), Hiredly (50), Indeed (50, best-effort, server-rendered), LinkedIn (50, CDP + deliberately low concurrency). Global ceiling **250/run**; per-source caps live in `config/sources.yaml`.
-- **Extraction**: schema.org `JobPosting` JSON-LD first (stdlib, very stable), CSS schema fallback configured per source in YAML. **No LLM extraction**, and the **full JD is stored**, never summarised.
-- **Crawl4AI wiring**: `AsyncWebCrawler` + `arun_many`, `MemoryAdaptiveDispatcher` / `SemaphoreDispatcher`, `RateLimiter` (429/503 backoff), `CrawlerMonitor`, per-source browser configs (CDP attach vs. managed persistent profile).
-- **Pipeline**: URL normalisation and dedup by `url_hash`, change detection by `content_hash`, staging to `data/runs/<run_id>/` (JSON + Markdown + raw HTML + manifest + dead-letter), idempotent `ON CONFLICT (url_hash) DO UPDATE` loader, OpenAI `text-embedding-3-small` embeddings into `vector(1536)` with an HNSW cosine index.
-- **Resilience**: transient-vs-permanent error classification, exponential backoff with jitter, dead-letter to both `dead_letter.jsonl` and the `crawl_failures` table, and rejection of challenge/empty pages so they never pollute the dataset.
-- **Interface**: CLI (`crawl`, `inspect`, `load`, `db-init`, `validate`) plus a JSON `run_request.json` contract that the future frontend will write.
-- **Database**: `db/001_init.sql`, one-time bootstrap `scripts/pg_setup.ps1`, lifecycle helpers `scripts/pg.ps1`.
-- **Tests**: 42 passing, including a Crawl4AI API contract test.
-
-Verified on this machine:
-
-- 42 tests pass (Python 3.13.15 venv, Crawl4AI **0.9.4**, Playwright browsers installed).
-- A real crawl runs end to end - browser launch, navigation, extraction, staged JSON - producing the correct title, company, location, salary, employment type, posted date, inferred seniority, skills and Markdown body.
-- PostgreSQL **16.10** and pgvector **0.8.6** were found **already installed** at `%LOCALAPPDATA%\pgsql16`, so no installer or admin rights are needed.
-
----
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
 
 
