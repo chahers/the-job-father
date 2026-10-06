@@ -1,4 +1,7 @@
 openai
 psycopg[binary]
-pgvector
+pgvector>=0.2.5,<0.4
 python-dotenv
+langchain-postgres>=0.0.18
+langchain-openai>=1.6
+sqlalchemy>=2.0

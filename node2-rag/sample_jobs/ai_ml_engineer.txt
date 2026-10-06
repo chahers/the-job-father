@@ -1,0 +1,26 @@
+Responsibilities:
+Develop and implement AI/ML models and algorithms.
+Focus on Vision, Trend analysis and Generative AI.
+Model training, optimising and result analysis
+Confusion matrix generation, analysis, and performance explanation
+Work closely with data scientists and engineers on AI/ML projects.
+Deploy and maintain AI solutions in production environments.
+Document AI systems and programs.
+Provide system support and training related to AI solutions.
+Participate in research and development of new AI technologies.
+Propose and design AI solutions based on user requirements.
+Any other job as assigned by the Management from time to time.
+
+Requirements:
+Applicants must possess at least a Degree or higher in Computer Science, Artificial Intelligence, or a related field.
+2 years or above of experience in AI/ML development.
+Programming languages: Python, R, Java.
+Experience with machine learning frameworks (TensorFlow, PyTorch, scikit-learn).
+Knowledge of deep learning concepts and techniques.
+Experience with cloud platforms (AWS, Azure, Google Cloud) for AI/ML deployments.
+Strong problem-solving and analytical skills.
+Ability to work independently and as part of a team.
+Required languages: Bahasa Malaysia, English.
+Good interpersonal and communication skills.
+Customer-oriented and pleasant personality.
+Experience with Natural Language Processing (NLP) or Computer Vision is a plus.

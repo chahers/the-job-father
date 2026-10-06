@@ -1,0 +1,72 @@
+We are looking for an AI Automation Software Engineer who can build practical AI-powered systems for digital marketing and business growth.
+
+This role is ideal for someone who enjoys using LLM models, automation, APIs, cloud tools, and agentic coding tools to turn business problems into working software solutions.
+
+You will work closely with our marketing, operations, and product UI/UX team to design, build, and deploy production-ready AI automation workflows that help businesses reduce manual work, improve lead handling, automate reporting, and grow faster digitally.
+
+
+
+What You Will Do
+Build AI-powered automation workflows for digital marketing, lead management, reporting, CRM, WhatsApp, website, and internal operations.
+
+Integrate LLM models such as OpenAI, Anthropic Claude, Gemini, or similar AI platforms into real business workflows.
+
+Develop and integrate APIs, REST APIs, webhooks, and backend services to connect different systems and tools.
+
+Work with modern tools such as Cloudflare, Next.js, Supabase, PostgreSQL, GitHub, and related cloud platforms.
+
+Use agentic coding tools such as Codex, Claude Code, or similar AI-assisted development tools to speed up development, debugging, and implementation.
+
+Translate business needs into clear technical solutions that are practical, scalable, and useful for real operations.
+
+Work with non-technical teams to understand workflow gaps, process bottlenecks, and automation opportunities.
+
+Collaborate with Product and UI/UX teams to turn ideas, wireframes, and user flows into production-ready code.
+
+Maintain clean documentation for workflows, integrations, API logic, and technical decisions.
+
+Debug, improve, and optimize AI automation systems for reliability, performance, and business impact.
+
+
+
+What We Are Looking For
+Background in Software Engineering, Computer Science, IT, Data Science, or equivalent hands-on experience.
+
+Strong practical understanding of Python or JavaScript / TypeScript.
+
+Experience with API integration, REST APIs, webhooks, JSON, and backend logic.
+
+Familiar with Next.js, Supabase, PostgreSQL, Cloudflare, or similar modern web/cloud stack.
+
+Experience using GitHub for version control and standard engineering workflow.
+
+Interest or experience in integrating OpenAI, Anthropic, Gemini, or other LLM APIs.
+
+Comfortable using AI coding tools such as Codex, Claude Code, Cursor, or similar tools.
+
+Able to understand business operations, not just write code.
+
+Able to communicate clearly with marketing, operations, product, and non-technical stakeholders.
+
+Strong problem-solving mindset with the ability to build solutions that support business growth.
+
+
+
+Nice to Have
+Experience with digital marketing workflows such as lead capture, WhatsApp automation, CRM, landing pages, campaign reporting, or ad performance dashboards.
+
+Experience deploying production-ready applications using Vercel, Cloudflare Workers, Supabase Edge Functions, or similar tools.
+
+
+
+Why Join Us
+Work on real AI automation systems, not just prototypes.
+
+Build solutions that directly improve business operations and digital marketing performance.
+
+Use modern AI-assisted development tools as part of the daily workflow.
+
+Work closely with product, UI/UX, marketing, and business teams.
+
+Grow into a high-impact role across AI engineering, automation, software development, and digital transformation.
+

@@ -1,0 +1,20 @@
+About Sunway Fintech:
+Sunway Fintech, an innovative solution designed to simplify and enhance your personal and business financial managements. Our platform curates a diverse range of offerings from approved fintech providers including cross-border transfer, supply chain financing, lending, insurance, and more – all in one place. With robust security and easy accessibility, we empower our users to take control of their financial future with ease. For more info, you may visit: https://sunwayfintech.com/
+
+Key Duties & Responsibilities:
+
+Communicate with stakeholders and understand the entire data extraction requirement.
+Clean input data, then perform bulk data extraction, and check the data integrity, and conduct analysis of the output data in a timely manner.
+Conduct ad hoc analysis to support other departments i.e. sales, marketing, operations, and request from management.
+Identify and rectify data integrity issues and liaise with members and respective data sources/owners.
+Verify and investigate credit rating and score enquiry against the credit information, and provide useful advice to the enquirer for external and internal stakeholders.
+Work closely with project and software team to improve end-to-end process.
+Any other task assigned by management
+Job Requirements:
+
+At least a Bachelor's Degree in Statistics / Mathematics / Computer Science / Actuarial Studies / Economics or equivalent.
+Proficient in Excel and programming languages like Python and SQL.
+Capability to produce detailed and factually accurate and easily comprehensible reports.
+Knowledge and experience in SQL and/or Statistic will be an added advantage.
+Strong organizational skills and ability to work independently to meet deadlines
+Good communication and interpersonal skills with attention to details and strong work ethic.

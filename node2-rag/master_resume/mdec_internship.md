@@ -5,4 +5,4 @@ Skills: Power BI, Alteryx, Excel, data cleaning, dashboards
 
 - Built a Power BI dashboard from collected datasets and presented it to my Head of Department.
 - Used Alteryx to clean and analyze data and Excel functions to structure raw datasets over a 5-month internship.
-- [ADD: what the dashboard showed and who used it]
+- The dashboard was a learning project: I presented it to my Head of Department to show what I had learned during the internship.

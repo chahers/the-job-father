@@ -8,5 +8,5 @@ Skills: Python, RAG, Google ADK, Gemini Flash, Vertex AI Search, Vertex AI Agent
 - Deployed to Vertex AI Agent Engine with Python scripts, managing configuration and authentication with environment variables and gcloud credentials; kept credentials out of Git.
 - Built a regression test suite (YAML ground-truth questions, CSV accuracy reports) and a latency diagnostic script.
 - Fixed a UI freeze (11s backend vs. 10s frontend timeout) by capping agent iterations, and restored dropped citations by restructuring the prompt; worked with a frontend developer, policy owners and my manager.
-- [ADD: how you chose the retrieval settings or tested accuracy, and any accuracy numbers you have]
-- [ADD: the biggest problem you hit and how you solved it]
+- Not all of the policy documents were being parsed successfully, so some policies could not be retrieved; I worked through this to improve coverage.
+- Several policy folders had overlapping content, which made getting accurate answers difficult; prompt design was a major part of resolving this. 
